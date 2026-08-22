@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary SEO Meta Tags -->
+  <title>NBA Standings & Playoff Predictor - 2026-2027 Season</title>
+  <meta name="title" content="NBA Standings & Playoff Predictor - 2026-2027 Season">
+  <meta name="description" content="Predict and rank the 2026-2027 NBA standings for the Eastern and Western conferences. Predict Play-In tournament games, simulate the full playoff bracket, pick your NBA champion, and export shareable graphics!">
+  <meta name="keywords" content="NBA Standings, NBA Predictor, Playoff Predictor, NBA 2026, Basketball Rankings, Eastern Conference, Western Conference, Play-In Tournament, NBA Finals Champion">
+  <meta name="author" content="NBA Standings Predictor">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Facebook / iMessage Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NBA Standings & Playoff Predictor">
+  <meta property="og:description" content="Rank conference standings, pick Play-In winners, and simulate your 2027 NBA Playoff bracket with exportable graphics!">
+  <meta property="og:image" content="https://a.espncdn.com/i/espn/misc_logos/500/nba.png">
+
+  <!-- Twitter Card Preview -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="NBA Standings & Playoff Predictor">
+  <meta property="twitter:description" content="Rank conference standings, pick Play-In winners, and simulate your 2027 NBA Playoff bracket!">
+  <meta property="twitter:image" content="https://a.espncdn.com/i/espn/misc_logos/500/nba.png">
+
+  <!-- Google Search Console Verification Tag -->
+  <meta name="google-site-verification" content="cATFjE6BtQzL0eJKMn9VALFD2p9N2FGvUOS_7WOB6Kg" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            nbaBlue: '#1d428a',
+            nbaRed: '#c9082a',
+            nbaDark: '#0b0f19',
+            nbaCard: '#0f172a',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+    }
+
+    .drag-item {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .drag-item.dragging {
+      opacity: 0.4;
+      transform: scale(0.98);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .drag-over-top {
+      border-top: 3px solid #3b82f6 !important;
+    }
+
+    .drag-over-bottom {
+      border-bottom: 3px solid #3b82f6 !important;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glow-playoff { border-left: 4px solid #10b981; }
+    .glow-playin { border-left: 4px solid #f59e0b; }
+    .glow-lottery { border-left: 4px solid #64748b; }
+
+    .badge-playoff { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-playin { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-lottery { background-color: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/80 flex items-center justify-center shadow-md p-1">
+          <img src="https://a.espncdn.com/i/espn/misc_logos/500/nba.png" alt="NBA Logo" class="w-full h-full object-contain">
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center gap-2">
+            <span id="header-title">NBA Standings Predictor</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Action Buttons Top Bar -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="standings-nav-buttons" class="flex items-center gap-2">
+          <button type="button" onclick="resetStandings()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span class="hidden sm:inline">Reset</span>
+          </button>
+          <button type="button" onclick="randomizeStandings()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-shuffle"></i>
+            <span class="hidden sm:inline">Shuffle</span>
+          </button>
+          <button type="button" onclick="openSummaryModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md transition flex items-center gap-1.5">
+            <i class="fa-solid fa-camera"></i>
+            <span>Standings Graphic</span>
+          </button>
+        </div>
+
+        <div id="playoffs-nav-buttons" class="hidden flex items-center gap-2">
+          <button type="button" onclick="switchView('standings')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Standings</span>
+          </button>
+          <button type="button" id="nav-view-playoff-graphic" onclick="openPlayoffGraphicModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed transition flex items-center gap-1.5" disabled>
+            <i class="fa-solid fa-trophy"></i>
+            <span>Playoff Graphic</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+    
+    <!-- STANDINGS PREDICTOR VIEW -->
+    <div id="view-standings" class="block">
+      <!-- Instructions Card -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-6 shadow-xl backdrop-blur-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold text-white mb-1">Rank Your 2026-2027 NBA Standings</h2>
+            <p class="text-xs sm:text-sm text-slate-400">
+              Drag and drop team cards or use <i class="fa-solid fa-chevron-up text-slate-500 text-xs"></i><i class="fa-solid fa-chevron-down text-slate-500 text-xs"></i> arrows to arrange teams from 1 to 15.
+            </p>
+          </div>
+
+          <!-- Tier Legend Badges -->
+          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md badge-playoff border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              1-6: Playoffs
+            </div>
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md badge-playin border border-amber-500/20">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              7-10: Play-In Tournament
+            </div>
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md badge-lottery border border-slate-500/20">
+              <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+              11-15: Lottery
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Conference Selector Tabs -->
+      <div class="flex md:hidden mb-6 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-sm font-bold">
+        <button type="button" id="tab-east" onclick="switchConferenceTab('east')" class="flex-1 py-2 rounded-lg text-center transition bg-red-600 text-white shadow-md">
+          Eastern Conference
+        </button>
+        <button type="button" id="tab-west" onclick="switchConferenceTab('west')" class="flex-1 py-2 rounded-lg text-center transition text-slate-400 hover:text-white">
+          Western Conference
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+        
+        <!-- EASTERN CONFERENCE BOARD -->
+        <div id="col-east" class="conference-col flex md:flex flex-col bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl">
+          <div class="flex items-center justify-between pb-4 mb-3 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-500 font-bold text-sm">
+                E
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white tracking-wide">Eastern Conference</h3>
+              </div>
+            </div>
+            <button type="button" onclick="sortAlphabetically('east')" class="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+              A-Z Sort
+            </button>
+          </div>
+
+          <div id="east-list" class="space-y-2 flex-grow min-h-[600px]" data-conference="east">
+            <!-- East Team items generated via JS -->
+          </div>
+        </div>
+
+        <!-- WESTERN CONFERENCE BOARD -->
+        <div id="col-west" class="conference-col hidden md:flex flex-col bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl">
+          <div class="flex items-center justify-between pb-4 mb-3 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-500 font-bold text-sm">
+                W
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white tracking-wide">Western Conference</h3>
+              </div>
+            </div>
+            <button type="button" onclick="sortAlphabetically('west')" class="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+              A-Z Sort
+            </button>
+          </div>
+
+          <div id="west-list" class="space-y-2 flex-grow min-h-[600px]" data-conference="west">
+            <!-- West Team items generated via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Floating Action Bar -->
+      <div class="mt-8 flex flex-col sm:flex-row items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 gap-4 shadow-xl">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+          <div>
+            <h4 class="font-bold text-white text-sm sm:text-base">Finished Your Standings Predictions?</h4>
+            <p class="text-xs text-slate-400">Take your top seeds directly into the postseason bracket or export a standings graphic!</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <button type="button" onclick="copyTextSummary()" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition flex items-center justify-center gap-2">
+            <i class="fa-regular fa-copy"></i>
+            <span>Copy Text</span>
+          </button>
+          <button type="button" onclick="openSummaryModal()" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-camera"></i>
+            <span>Standings Graphic</span>
+          </button>
+          <button type="button" onclick="switchView('playoffs')" class="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-red-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white shadow-lg shadow-red-500/20 transition flex items-center justify-center gap-2 transform hover:scale-[1.02]">
+            <i class="fa-solid fa-trophy text-amber-300"></i>
+            <span>Predict the NBA Playoffs</span>
+            <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYOFF PREDICTOR VIEW -->
+    <div id="view-playoffs" class="hidden">
+      
+      <!-- Play-In Status Banner -->
+      <div id="playin-status-banner" class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 mb-6 text-xs text-amber-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+          <span><strong>Play-In Required:</strong> You must pick winners for the Eastern and Western Play-In games below before starting Round 1 of the playoffs!</span>
+        </div>
+        <button type="button" onclick="resetPlayoffs()" class="px-2.5 py-1 bg-amber-900/50 hover:bg-amber-800/60 rounded text-[11px] font-semibold text-amber-200 border border-amber-500/30 transition shrink-0 ml-2">
+          Reset Bracket
+        </button>
+      </div>
+
+      <!-- PLAY-IN TOURNAMENT SECTION -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 mb-8 shadow-xl">
+        <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2 mb-4 pb-2 border-b border-slate-800">
+          <i class="fa-solid fa-fire text-amber-400"></i>
+          <span>Play-In Tournament (Predict First)</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- EAST PLAY-IN -->
+          <div class="bg-slate-950/80 p-3.5 rounded-xl border border-red-500/20">
+            <h4 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-red-500"></span> Eastern Play-In
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <!-- Game 1: 7 vs 8 -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 1 (7 vs 8)</span>
+                </div>
+                <div id="east-pi-g1-slot" class="space-y-1.5"></div>
+              </div>
+              <!-- Game 2: 9 vs 10 -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 2 (9 vs 10)</span>
+                </div>
+                <div id="east-pi-g2-slot" class="space-y-1.5"></div>
+              </div>
+              <!-- Game 3: Final -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 3 (Final)</span>
+                </div>
+                <div id="east-pi-g3-slot" class="space-y-1.5"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WEST PLAY-IN -->
+          <div class="bg-slate-950/80 p-3.5 rounded-xl border border-blue-500/20">
+            <h4 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Western Play-In
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <!-- Game 1: 7 vs 8 -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 1 (7 vs 8)</span>
+                </div>
+                <div id="west-pi-g1-slot" class="space-y-1.5"></div>
+              </div>
+              <!-- Game 2: 9 vs 10 -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 2 (9 vs 10)</span>
+                </div>
+                <div id="west-pi-g2-slot" class="space-y-1.5"></div>
+              </div>
+              <!-- Game 3: Final -->
+              <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between">
+                  <span>GAME 3 (Final)</span>
+                </div>
+                <div id="west-pi-g3-slot" class="space-y-1.5"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYOFF BRACKET GRID -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-8 shadow-2xl overflow-x-auto">
+        <div class="min-w-[1260px] space-y-6">
+          
+          <!-- Column Headers -->
+          <div class="grid grid-cols-7 text-center font-black text-[11px] text-slate-400 uppercase tracking-wider pb-3 border-b border-slate-800">
+            <div>First Round</div>
+            <div>Conf. Semis</div>
+            <div>Conf. Finals</div>
+            <div class="text-amber-400">2027 NBA Finals</div>
+            <div>Conf. Finals</div>
+            <div>Conf. Semis</div>
+            <div>First Round</div>
+          </div>
+
+          <!-- Bracket Grid -->
+          <div class="grid grid-cols-7 gap-3 items-center">
+            
+            <!-- EAST FIRST ROUND (Col 1) -->
+            <div class="space-y-4">
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 1 (1 vs 8)</div>
+                <div id="e-r1-m1-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 2 (4 vs 5)</div>
+                <div id="e-r1-m2-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 3 (3 vs 6)</div>
+                <div id="e-r1-m3-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 4 (2 vs 7)</div>
+                <div id="e-r1-m4-slot" class="space-y-1"></div>
+              </div>
+            </div>
+
+            <!-- EAST SEMIFINALS (Col 2) -->
+            <div class="space-y-12 flex flex-col justify-around h-full">
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">EAST SEMI 1</div>
+                <div id="e-r2-m1-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">EAST SEMI 2</div>
+                <div id="e-r2-m2-slot" class="space-y-1"></div>
+              </div>
+            </div>
+
+            <!-- EAST FINALS (Col 3) -->
+            <div class="flex flex-col justify-center h-full">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-red-500/30 space-y-1.5 shadow-lg">
+                <div class="text-[10px] font-bold text-red-400 uppercase">Eastern Conf. Finals</div>
+                <div id="e-cf-slot" class="space-y-1.5"></div>
+              </div>
+            </div>
+
+            <!-- CENTER FINALS & CHAMPION (Col 4) -->
+            <div class="flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-950/90 rounded-2xl border-2 border-amber-500/50 ring-1 ring-amber-500/20 text-center shadow-2xl shadow-amber-500/10 my-auto space-y-3">
+              <div class="flex flex-col items-center gap-1 pb-2 border-b border-slate-800 w-full">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500/20 via-yellow-500/20 to-amber-500/10 border border-amber-400/40 flex items-center justify-center shadow-inner">
+                  <i class="fa-solid fa-trophy text-amber-400 text-base drop-shadow-md"></i>
+                </div>
+                <span class="text-xs font-black text-amber-400 uppercase tracking-widest mt-1">2027 NBA FINALS</span>
+              </div>
+              
+              <!-- East & West Finals Winner Buttons -->
+              <div class="w-full space-y-2">
+                <div id="finals-east-slot" class="w-full"></div>
+                <div class="flex items-center justify-center gap-2 py-0.5">
+                  <div class="h-px bg-slate-800 flex-grow"></div>
+                  <span class="text-[10px] font-black text-amber-400/90 tracking-wider">VS</span>
+                  <div class="h-px bg-slate-800 flex-grow"></div>
+                </div>
+                <div id="finals-west-slot" class="w-full"></div>
+              </div>
+
+              <!-- Champion Crown Slot -->
+              <div id="champion-card-slot" class="w-full pt-2 border-t border-slate-800/80">
+                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">2027 NBA CHAMPION</div>
+              </div>
+            </div>
+
+            <!-- WEST FINALS (Col 5) -->
+            <div class="flex flex-col justify-center h-full">
+              <div class="bg-slate-950 p-2.5 rounded-xl border border-blue-500/30 space-y-1.5 shadow-lg">
+                <div class="text-[10px] font-bold text-blue-400 uppercase">Western Conf. Finals</div>
+                <div id="w-cf-slot" class="space-y-1.5"></div>
+              </div>
+            </div>
+
+            <!-- WEST SEMIFINALS (Col 6) -->
+            <div class="space-y-12 flex flex-col justify-around h-full">
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">WEST SEMI 1</div>
+                <div id="w-r2-m1-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">WEST SEMI 2</div>
+                <div id="w-r2-m2-slot" class="space-y-1"></div>
+              </div>
+            </div>
+
+            <!-- WEST FIRST ROUND (Col 7) -->
+            <div class="space-y-4">
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 1 (1 vs 8)</div>
+                <div id="w-r1-m1-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 2 (4 vs 5)</div>
+                <div id="w-r1-m2-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 3 (3 vs 6)</div>
+                <div id="w-r1-m3-slot" class="space-y-1"></div>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 space-y-1.5 shadow-md">
+                <div class="text-[10px] text-slate-500 font-bold">MATCH 4 (2 vs 7)</div>
+                <div id="w-r1-m4-slot" class="space-y-1"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Standings Summary Modal -->
+  <div id="summary-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex flex-col overflow-y-auto p-4">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-4xl w-full mx-auto my-auto flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-camera text-blue-400 text-xl"></i>
+          <div>
+            <h3 class="font-black text-base sm:text-lg text-white tracking-wide">Standings Graphic</h3>
+            <p class="text-xs text-slate-400">Take a screenshot of the card below to share your predictions!</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal('summary-modal')" class="text-slate-400 hover:text-white p-1.5 rounded-lg transition ml-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Screenshot-Ready Card Area -->
+      <div class="p-4 sm:p-8 overflow-x-auto flex justify-center bg-[#070b14]">
+        <div id="export-card-area" class="w-[680px] bg-[#090e17] border border-slate-800/80 p-6 rounded-2xl text-slate-100 flex flex-col shadow-2xl select-text">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-5 mb-5">
+            <div class="flex items-center gap-3.5">
+              <img src="https://a.espncdn.com/i/espn/misc_logos/500/nba.png" class="h-12 object-contain" alt="NBA">
+              <div>
+                <h2 class="text-2xl font-black text-white tracking-tight">NBA Standings Predictions</h2>
+                <p class="text-xs text-amber-400 font-extrabold tracking-widest uppercase mt-0.5">2026-2027 SEASON</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold px-4 py-1.5 bg-slate-800/90 border border-slate-700/80 rounded-full text-slate-200 shadow-sm">My Predictions</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6">
+            <!-- East -->
+            <div class="bg-[#0b1220] p-4 rounded-xl border border-red-500/25">
+              <h4 class="font-bold text-xs text-red-400 uppercase tracking-wider mb-3 pb-2 border-b border-red-500/30 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> EASTERN CONFERENCE
+              </h4>
+              <ul id="modal-east-list" class="space-y-1.5 text-xs"></ul>
+            </div>
+
+            <!-- West -->
+            <div class="bg-[#0b1220] p-4 rounded-xl border border-blue-500/25">
+              <h4 class="font-bold text-xs text-blue-400 uppercase tracking-wider mb-3 pb-2 border-b border-blue-500/30 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> WESTERN CONFERENCE
+              </h4>
+              <ul id="modal-west-list" class="space-y-1.5 text-xs"></ul>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>NBA Standings Predictor</span>
+            <span>2026-2027 Season Predictions</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playoff Graphic Modal -->
+  <div id="playoff-graphic-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex flex-col overflow-y-auto p-4">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-5xl w-full mx-auto my-auto flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-trophy text-amber-400 text-xl"></i>
+          <div>
+            <h3 class="font-black text-base sm:text-lg text-white tracking-wide">2027 Playoff Bracket Graphic</h3>
+            <p class="text-xs text-slate-400">Take a screenshot of your full postseason bracket predictions!</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal('playoff-graphic-modal')" class="text-slate-400 hover:text-white p-1.5 rounded-lg transition ml-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Screenshot-Ready Playoff Graphic -->
+      <div class="p-4 sm:p-8 overflow-x-auto flex justify-center bg-[#070b14]">
+        <div id="export-playoff-card" class="w-[960px] bg-[#090e17] border border-slate-800/80 p-6 rounded-2xl text-slate-100 flex flex-col shadow-2xl select-text">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-4">
+            <div class="flex items-center gap-3.5">
+              <img src="https://a.espncdn.com/i/espn/misc_logos/500/nba.png" class="h-10 object-contain" alt="NBA">
+              <div>
+                <h2 class="text-xl font-black text-white tracking-tight">2027 NBA Playoff Predictions</h2>
+                <p class="text-[10px] text-amber-400 font-extrabold tracking-widest uppercase">POSTSEASON BRACKET</p>
+              </div>
+            </div>
+            <div id="graphic-champion-badge" class="flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 px-3 py-1.5 rounded-xl">
+              <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+              <div class="text-left">
+                <div class="text-[9px] font-bold text-amber-300 uppercase">2027 Champion</div>
+                <div id="graphic-champion-name" class="text-xs font-black text-white">TBD</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphic Bracket Content -->
+          <div id="graphic-bracket-summary" class="w-full">
+            <!-- Populated via Javascript -->
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span>NBA Playoff Predictor</span>
+            <span>2027 Season Bracket</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Bar -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out bg-slate-800 text-white border border-slate-700 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 pointer-events-none">
+    <div id="toast-icon" class="text-emerald-400 text-lg">
+      <i class="fa-solid fa-check-circle"></i>
+    </div>
+    <span id="toast-message" class="text-xs sm:text-sm font-semibold">Message</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-12 border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>© 2026-2027 NBA Standings & Playoff Predictor</p>
+      <p class="text-slate-600">All NBA team logos and names belong to the NBA and its respective teams.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Complete NBA Team Dataset with Short Names for Bracket Compatibility
+    const NBA_TEAMS = {
+      east: [
+        { id: 'DET', name: 'Detroit Pistons', shortName: 'Pistons', city: 'Detroit', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/det.png' },
+        { id: 'BOS', name: 'Boston Celtics', shortName: 'Celtics', city: 'Boston', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png' },
+        { id: 'NYK', name: 'New York Knicks', shortName: 'Knicks', city: 'New York', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/ny.png' },
+        { id: 'CLE', name: 'Cleveland Cavaliers', shortName: 'Cavaliers', city: 'Cleveland', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/cle.png' },
+        { id: 'TOR', name: 'Toronto Raptors', shortName: 'Raptors', city: 'Toronto', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/tor.png' },
+        { id: 'ATL', name: 'Atlanta Hawks', shortName: 'Hawks', city: 'Atlanta', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png' },
+        { id: 'PHI', name: 'Philadelphia 76ers', shortName: '76ers', city: 'Philadelphia', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/phi.png' },
+        { id: 'ORL', name: 'Orlando Magic', shortName: 'Magic', city: 'Orlando', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/orl.png' },
+        { id: 'CHA', name: 'Charlotte Hornets', shortName: 'Hornets', city: 'Charlotte', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/cha.png' },
+        { id: 'MIA', name: 'Miami Heat', shortName: 'Heat', city: 'Miami', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/mia.png' },
+        { id: 'MIL', name: 'Milwaukee Bucks', shortName: 'Bucks', city: 'Milwaukee', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/mil.png' },
+        { id: 'CHI', name: 'Chicago Bulls', shortName: 'Bulls', city: 'Chicago', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/chi.png' },
+        { id: 'BKN', name: 'Brooklyn Nets', shortName: 'Nets', city: 'Brooklyn', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png' },
+        { id: 'IND', name: 'Indiana Pacers', shortName: 'Pacers', city: 'Indiana', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/ind.png' },
+        { id: 'WAS', name: 'Washington Wizards', shortName: 'Wizards', city: 'Washington', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/was.png' }
+      ],
+      west: [
+        { id: 'OKC', name: 'Oklahoma City Thunder', shortName: 'Thunder', city: 'Oklahoma City', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/okc.png' },
+        { id: 'SAS', name: 'San Antonio Spurs', shortName: 'Spurs', city: 'San Antonio', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/sas.png' },
+        { id: 'DEN', name: 'Denver Nuggets', shortName: 'Nuggets', city: 'Denver', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/den.png' },
+        { id: 'LAL', name: 'Los Angeles Lakers', shortName: 'Lakers', city: 'Los Angeles', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png' },
+        { id: 'HOU', name: 'Houston Rockets', shortName: 'Rockets', city: 'Houston', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/hou.png' },
+        { id: 'MIN', name: 'Minnesota Timberwolves', shortName: 'Wolves', city: 'Minnesota', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/min.png' },
+        { id: 'PHX', name: 'Phoenix Suns', shortName: 'Suns', city: 'Phoenix', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/phx.png' },
+        { id: 'POR', name: 'Portland Trail Blazers', shortName: 'Blazers', city: 'Portland', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/por.png' },
+        { id: 'LAC', name: 'LA Clippers', shortName: 'Clippers', city: 'Los Angeles', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lac.png' },
+        { id: 'GSW', name: 'Golden State Warriors', shortName: 'Warriors', city: 'Golden State', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/gs.png' },
+        { id: 'NOP', name: 'New Orleans Pelicans', shortName: 'Pelicans', city: 'New Orleans', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/no.png' },
+        { id: 'DAL', name: 'Dallas Mavericks', shortName: 'Mavericks', city: 'Dallas', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/dal.png' },
+        { id: 'MEM', name: 'Memphis Grizzlies', shortName: 'Grizzlies', city: 'Memphis', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/mem.png' },
+        { id: 'SAC', name: 'Sacramento Kings', shortName: 'Kings', city: 'Sacramento', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/sac.png' },
+        { id: 'UTA', name: 'Utah Jazz', shortName: 'Jazz', city: 'Utah', logo: 'https://a.espncdn.com/i/teamlogos/nba/500/utah.png' }
+      ]
+    };
+
+    // State variables
+    let currentEastState = [];
+    let currentWestState = [];
+    let draggedElement = null;
+    let lastPlayoffStandingsHash = '';
+
+    // Playoff State Object
+    let playoffState = {
+      playin: {
+        east: { g1Winner: null, g1Loser: null, g2Winner: null, g2Loser: null, g3Winner: null },
+        west: { g1Winner: null, g1Loser: null, g2Winner: null, g2Loser: null, g3Winner: null }
+      },
+      r1: {
+        east: [null, null, null, null],
+        west: [null, null, null, null]
+      },
+      r2: {
+        east: [null, null],
+        west: [null, null]
+      },
+      cf: {
+        east: null,
+        west: null
+      },
+      champion: null
+    };
+
+    function getSeason2026Standings(conf) {
+      if (conf === 'east') {
+        return [
+          NBA_TEAMS.east.find(t => t.id === 'DET'),
+          NBA_TEAMS.east.find(t => t.id === 'BOS'),
+          NBA_TEAMS.east.find(t => t.id === 'NYK'),
+          NBA_TEAMS.east.find(t => t.id === 'CLE'),
+          NBA_TEAMS.east.find(t => t.id === 'TOR'),
+          NBA_TEAMS.east.find(t => t.id === 'ATL'),
+          NBA_TEAMS.east.find(t => t.id === 'PHI'),
+          NBA_TEAMS.east.find(t => t.id === 'ORL'),
+          NBA_TEAMS.east.find(t => t.id === 'CHA'),
+          NBA_TEAMS.east.find(t => t.id === 'MIA'),
+          NBA_TEAMS.east.find(t => t.id === 'MIL'),
+          NBA_TEAMS.east.find(t => t.id === 'CHI'),
+          NBA_TEAMS.east.find(t => t.id === 'BKN'),
+          NBA_TEAMS.east.find(t => t.id === 'IND'),
+          NBA_TEAMS.east.find(t => t.id === 'WAS')
+        ].filter(Boolean);
+      } else {
+        return [
+          NBA_TEAMS.west.find(t => t.id === 'OKC'),
+          NBA_TEAMS.west.find(t => t.id === 'SAS'),
+          NBA_TEAMS.west.find(t => t.id === 'DEN'),
+          NBA_TEAMS.west.find(t => t.id === 'LAL'),
+          NBA_TEAMS.west.find(t => t.id === 'HOU'),
+          NBA_TEAMS.west.find(t => t.id === 'MIN'),
+          NBA_TEAMS.west.find(t => t.id === 'PHX'),
+          NBA_TEAMS.west.find(t => t.id === 'POR'),
+          NBA_TEAMS.west.find(t => t.id === 'LAC'),
+          NBA_TEAMS.west.find(t => t.id === 'GSW'),
+          NBA_TEAMS.west.find(t => t.id === 'NOP'),
+          NBA_TEAMS.west.find(t => t.id === 'DAL'),
+          NBA_TEAMS.west.find(t => t.id === 'MEM'),
+          NBA_TEAMS.west.find(t => t.id === 'SAC'),
+          NBA_TEAMS.west.find(t => t.id === 'UTA')
+        ].filter(Boolean);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      currentEastState = getSeason2026Standings('east');
+      currentWestState = getSeason2026Standings('west');
+      renderLists();
+    });
+
+    function switchView(view) {
+      const standingsView = document.getElementById('view-standings');
+      const playoffsView = document.getElementById('view-playoffs');
+      const standingsNav = document.getElementById('standings-nav-buttons');
+      const playoffsNav = document.getElementById('playoffs-nav-buttons');
+      const headerTitle = document.getElementById('header-title');
+
+      if (view === 'playoffs') {
+        standingsView.classList.add('hidden');
+        standingsView.classList.remove('block');
+        playoffsView.classList.remove('hidden');
+        playoffsView.classList.add('block');
+
+        standingsNav.classList.add('hidden');
+        playoffsNav.classList.remove('hidden');
+        headerTitle.innerText = "2027 NBA Playoff Predictor";
+
+        // Check if standings changed since last playoff initialization
+        const currentHash = currentEastState.slice(0, 10).map(t => t.id).join('') + '_' + currentWestState.slice(0, 10).map(t => t.id).join('');
+        if (currentHash !== lastPlayoffStandingsHash) {
+          lastPlayoffStandingsHash = currentHash;
+          initPlayoffBracketFromStandings();
+        } else {
+          updateBracketUI();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        playoffsView.classList.add('hidden');
+        playoffsView.classList.remove('block');
+        standingsView.classList.remove('hidden');
+        standingsView.classList.add('block');
+
+        playoffsNav.classList.add('hidden');
+        standingsNav.classList.remove('hidden');
+        headerTitle.innerText = "NBA Standings Predictor";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function renderLists() {
+      renderConferenceList('east', currentEastState);
+      renderConferenceList('west', currentWestState);
+    }
+
+    function renderConferenceList(conf, teamArray) {
+      const listContainer = document.getElementById(`${conf}-list`);
+      if (!listContainer) return;
+      listContainer.innerHTML = '';
+
+      teamArray.forEach((team, index) => {
+        const rank = index + 1;
+        let tierClass = 'glow-lottery';
+        let badgeClass = 'badge-lottery';
+
+        if (rank <= 6) {
+          tierClass = 'glow-playoff';
+          badgeClass = 'badge-playoff';
+        } else if (rank <= 10) {
+          tierClass = 'glow-playin';
+          badgeClass = 'badge-playin';
+        }
+
+        const card = document.createElement('div');
+        card.className = `drag-item bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-sm cursor-grab active:cursor-grabbing ${tierClass}`;
+        card.setAttribute('draggable', 'true');
+        card.setAttribute('data-id', team.id);
+        card.setAttribute('data-conference', conf);
+        card.setAttribute('data-index', index);
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0 ${badgeClass}">
+              ${rank}
+            </div>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 p-1 border border-slate-700/50 flex items-center justify-center shrink-0">
+              <img src="${team.logo}" alt="${team.name}" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${team.id}'">
+            </div>
+            <div class="min-w-0">
+              <div class="font-bold text-xs sm:text-sm text-white whitespace-nowrap">${team.name}</div>
+              <div class="text-[10px] sm:text-xs text-slate-400 font-medium tracking-wide whitespace-nowrap">${team.city}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0 ml-2">
+            <div class="flex flex-col gap-0.5 mr-1">
+              <button type="button" onclick="moveTeam('${conf}', ${index}, -1)" title="Move Up" class="w-6 h-5 rounded bg-slate-900 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition ${index === 0 ? 'opacity-30 pointer-events-none' : ''}">
+                <i class="fa-solid fa-chevron-up"></i>
+              </button>
+              <button type="button" onclick="moveTeam('${conf}', ${index}, 1)" title="Move Down" class="w-6 h-5 rounded bg-slate-900 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition ${index === 14 ? 'opacity-30 pointer-events-none' : ''}">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+            </div>
+            <div class="text-slate-500 hover:text-slate-300 p-1 cursor-grab">
+              <i class="fa-solid fa-grip-vertical text-sm"></i>
+            </div>
+          </div>
+        `;
+
+        attachDragEvents(card, conf);
+        listContainer.appendChild(card);
+      });
+    }
+
+    function attachDragEvents(item, conf) {
+      item.addEventListener('dragstart', (e) => {
+        draggedElement = item;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      item.addEventListener('dragend', () => {
+        draggedElement = null;
+        item.classList.remove('dragging');
+        clearDragStyles();
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggedElement) return;
+        const targetConf = item.getAttribute('data-conference');
+        const sourceConf = draggedElement.getAttribute('data-conference');
+        if (targetConf !== sourceConf) return;
+
+        const bounding = item.getBoundingClientRect();
+        const offset = e.clientY - bounding.top - bounding.height / 2;
+
+        clearDragStyles();
+        if (offset < 0) {
+          item.classList.add('drag-over-top');
+        } else {
+          item.classList.add('drag-over-bottom');
+        }
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        clearDragStyles();
+        if (!draggedElement) return;
+
+        const sourceConf = draggedElement.getAttribute('data-conference');
+        const targetConf = item.getAttribute('data-conference');
+
+        if (sourceConf !== targetConf) return;
+
+        const fromIndex = parseInt(draggedElement.getAttribute('data-index'));
+        let toIndex = parseInt(item.getAttribute('data-index'));
+
+        const bounding = item.getBoundingClientRect();
+        const offset = e.clientY - bounding.top - bounding.height / 2;
+        if (offset > 0) toIndex += 1;
+        if (fromIndex < toIndex) toIndex -= 1;
+
+        reorderTeam(conf, fromIndex, toIndex);
+      });
+    }
+
+    function clearDragStyles() {
+      document.querySelectorAll('.drag-item').forEach(el => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+    }
+
+    function reorderTeam(conf, fromIndex, toIndex) {
+      const list = conf === 'east' ? currentEastState : currentWestState;
+      if (fromIndex === toIndex || toIndex < 0 || toIndex >= list.length) return;
+
+      const [movedTeam] = list.splice(fromIndex, 1);
+      list.splice(toIndex, 0, movedTeam);
+
+      renderLists();
+    }
+
+    function moveTeam(conf, index, direction) {
+      reorderTeam(conf, index, index + direction);
+    }
+
+    function sortAlphabetically(conf) {
+      if (conf === 'east') {
+        currentEastState.sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        currentWestState.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      renderLists();
+      showToast('Sorted teams alphabetically');
+    }
+
+    function resetStandings() {
+      currentEastState = getSeason2026Standings('east');
+      currentWestState = getSeason2026Standings('west');
+      renderLists();
+      showToast('Standings reset to default order');
+    }
+
+    function randomizeStandings() {
+      currentEastState.sort(() => Math.random() - 0.5);
+      currentWestState.sort(() => Math.random() - 0.5);
+      renderLists();
+      showToast('Standings shuffled!');
+    }
+
+    function switchConferenceTab(conf) {
+      const eastCol = document.getElementById('col-east');
+      const westCol = document.getElementById('col-west');
+      const tabEast = document.getElementById('tab-east');
+      const tabWest = document.getElementById('tab-west');
+
+      if (conf === 'east') {
+        eastCol.classList.remove('hidden');
+        eastCol.classList.add('flex');
+        westCol.classList.add('hidden');
+        westCol.classList.remove('flex');
+
+        tabEast.className = 'flex-1 py-2 rounded-lg text-center transition bg-red-600 text-white shadow-md';
+        tabWest.className = 'flex-1 py-2 rounded-lg text-center transition text-slate-400 hover:text-white';
+      } else {
+        westCol.classList.remove('hidden');
+        westCol.classList.add('flex');
+        eastCol.classList.add('hidden');
+        eastCol.classList.remove('flex');
+
+        tabWest.className = 'flex-1 py-2 rounded-lg text-center transition bg-blue-600 text-white shadow-md';
+        tabEast.className = 'flex-1 py-2 rounded-lg text-center transition text-slate-400 hover:text-white';
+      }
+    }
+
+    function initPlayoffBracketFromStandings() {
+      playoffState = {
+        playin: {
+          east: { g1Winner: null, g1Loser: null, g2Winner: null, g2Loser: null, g3Winner: null },
+          west: { g1Winner: null, g1Loser: null, g2Winner: null, g2Loser: null, g3Winner: null }
+        },
+        r1: { east: [null, null, null, null], west: [null, null, null, null] },
+        r2: { east: [null, null], west: [null, null] },
+        cf: { east: null, west: null },
+        champion: null
+      };
+
+      updateBracketUI();
+    }
+
+    function getTeamWithSeed(team, seed) {
+      if (!team) return null;
+      return { ...team, seed };
+    }
+
+    function updateBracketUI() {
+      renderPlayInGames('east');
+      renderPlayInGames('west');
+
+      const eastPIComplete = playoffState.playin.east.g1Winner && playoffState.playin.east.g3Winner;
+      const westPIComplete = playoffState.playin.west.g1Winner && playoffState.playin.west.g3Winner;
+      const allPIComplete = eastPIComplete && westPIComplete;
+
+      const banner = document.getElementById('playin-status-banner');
+      if (banner) {
+        if (allPIComplete) {
+          banner.className = "bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 mb-6 text-xs text-emerald-200 flex items-center justify-between";
+          banner.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+              <span><strong>Play-In Complete!</strong> Seeds #7 and #8 are locked. You can now predict Round 1 of the NBA Playoffs!</span>
+            </div>
+            <button type="button" onclick="resetPlayoffs()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-semibold text-slate-200 border border-slate-700 transition shrink-0 ml-2">
+              Reset Bracket
+            </button>
+          `;
+        } else {
+          banner.className = "bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 mb-6 text-xs text-amber-200 flex items-center justify-between";
+          banner.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+              <span><strong>Play-In Required:</strong> Complete the Eastern & Western Play-In games below to unlock Seeds #7 and #8 in Round 1!</span>
+            </div>
+            <button type="button" onclick="resetPlayoffs()" class="px-2.5 py-1 bg-amber-900/50 hover:bg-amber-800/60 rounded text-[11px] font-semibold text-amber-200 border border-amber-500/30 transition shrink-0 ml-2">
+              Reset Bracket
+            </button>
+          `;
+        }
+      }
+
+      renderConferenceRounds('east');
+      renderConferenceRounds('west');
+      renderFinals();
+
+      const graphicBtn = document.getElementById('nav-view-playoff-graphic');
+      if (graphicBtn) {
+        if (playoffState.champion) {
+          graphicBtn.disabled = false;
+          graphicBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-md transition cursor-pointer flex items-center gap-1.5";
+        } else {
+          graphicBtn.disabled = true;
+          graphicBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed transition flex items-center gap-1.5";
+        }
+      }
+    }
+
+    function renderBracketButton(team, isSelected, onClickStr) {
+      if (!team) {
+        return `<div class="p-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-[10px] text-slate-500 font-medium text-center">TBD</div>`;
+      }
+      const selectedClasses = isSelected
+        ? 'bg-gradient-to-r from-amber-500/30 to-amber-600/30 border-amber-400 text-amber-200 ring-1 ring-amber-400/60 font-black shadow-md'
+        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200 hover:text-white font-semibold';
+
+      return `
+        <button type="button" onclick="${onClickStr}" class="w-full p-1.5 sm:p-2 rounded-xl border ${selectedClasses} transition-all duration-150 flex items-center justify-between text-xs shadow-sm hover:scale-[1.01]">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-[10px] font-black ${isSelected ? 'text-amber-400' : 'text-slate-400'} shrink-0">#${team.seed}</span>
+            <img src="${team.logo}" class="w-4 h-4 sm:w-5 sm:h-5 object-contain shrink-0" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${team.id}';">
+            <span class="font-bold whitespace-nowrap text-[11px] sm:text-xs ${isSelected ? 'text-amber-200' : 'text-white'} shrink-0">${team.shortName}</span>
+          </div>
+        </button>
+      `;
+    }
+
+    function renderPlayInGames(conf) {
+      const list = conf === 'east' ? currentEastState : currentWestState;
+      const pi = playoffState.playin[conf];
+
+      const t7 = getTeamWithSeed(list[6], 7);
+      const t8 = getTeamWithSeed(list[7], 8);
+      const t9 = getTeamWithSeed(list[8], 9);
+      const t10 = getTeamWithSeed(list[9], 10);
+
+      // G1: 7 vs 8
+      const g1Slot = document.getElementById(`${conf}-pi-g1-slot`);
+      if (g1Slot) {
+        g1Slot.innerHTML = `
+          ${renderBracketButton(t7, pi.g1Winner?.id === t7.id, `pickPlayInWinner('${conf}', 'g1', '${t7.id}')`)}
+          ${renderBracketButton(t8, pi.g1Winner?.id === t8.id, `pickPlayInWinner('${conf}', 'g1', '${t8.id}')`)}
+        `;
+      }
+
+      // G2: 9 vs 10
+      const g2Slot = document.getElementById(`${conf}-pi-g2-slot`);
+      if (g2Slot) {
+        g2Slot.innerHTML = `
+          ${renderBracketButton(t9, pi.g2Winner?.id === t9.id, `pickPlayInWinner('${conf}', 'g2', '${t9.id}')`)}
+          ${renderBracketButton(t10, pi.g2Winner?.id === t10.id, `pickPlayInWinner('${conf}', 'g2', '${t10.id}')`)}
+        `;
+      }
+
+      // G3: Loser G1 vs Winner G2
+      const g3Slot = document.getElementById(`${conf}-pi-g3-slot`);
+      if (g3Slot) {
+        const teamA = pi.g1Loser;
+        const teamB = pi.g2Winner;
+        const isReady = teamA && teamB;
+
+        if (!isReady) {
+          g3Slot.innerHTML = `
+            <div class="p-1.5 rounded bg-slate-950/50 border border-dashed border-slate-800 text-[10px] text-slate-500 text-center">G1 Loser</div>
+            <div class="p-1.5 rounded bg-slate-950/50 border border-dashed border-slate-800 text-[10px] text-slate-500 text-center">G2 Winner</div>
+          `;
+        } else {
+          const [topTeam, botTeam] = teamA.seed <= teamB.seed ? [teamA, teamB] : [teamB, teamA];
+          g3Slot.innerHTML = `
+            ${renderBracketButton(topTeam, pi.g3Winner?.id === topTeam.id, `pickPlayInWinner('${conf}', 'g3', '${topTeam.id}')`)}
+            ${renderBracketButton(botTeam, pi.g3Winner?.id === botTeam.id, `pickPlayInWinner('${conf}', 'g3', '${botTeam.id}')`)}
+          `;
+        }
+      }
+    }
+
+    function pickPlayInWinner(conf, game, winnerId) {
+      const list = conf === 'east' ? currentEastState : currentWestState;
+      const pi = playoffState.playin[conf];
+
+      const t7 = getTeamWithSeed(list[6], 7);
+      const t8 = getTeamWithSeed(list[7], 8);
+      const t9 = getTeamWithSeed(list[8], 9);
+      const t10 = getTeamWithSeed(list[9], 10);
+
+      let winner = null;
+      let loser = null;
+
+      if (game === 'g1') {
+        if (winnerId === t7.id) { winner = t7; loser = t8; }
+        else { winner = t8; loser = t7; }
+
+        if (pi.g1Winner?.id !== winner.id) {
+          pi.g1Winner = { ...winner, seed: 7 };
+          pi.g1Loser = loser;
+          pi.g3Winner = null;
+          playoffState.r1[conf][0] = null;
+          playoffState.r1[conf][3] = null;
+          playoffState.r2[conf] = [null, null];
+          playoffState.cf[conf] = null;
+          playoffState.champion = null;
+        }
+      } else if (game === 'g2') {
+        if (winnerId === t9.id) { winner = t9; loser = t10; }
+        else { winner = t10; loser = t9; }
+
+        if (pi.g2Winner?.id !== winner.id) {
+          pi.g2Winner = winner;
+          pi.g2Loser = loser;
+          pi.g3Winner = null;
+          playoffState.r1[conf][0] = null;
+          playoffState.r2[conf] = [null, null];
+          playoffState.cf[conf] = null;
+          playoffState.champion = null;
+        }
+      } else if (game === 'g3') {
+        const teamA = pi.g1Loser;
+        const teamB = pi.g2Winner;
+        winner = winnerId === teamA?.id ? teamA : teamB;
+
+        if (winner && pi.g3Winner?.id !== winner.id) {
+          pi.g3Winner = { ...winner, seed: 8 };
+          playoffState.r1[conf][0] = null;
+          playoffState.r2[conf] = [null, null];
+          playoffState.cf[conf] = null;
+          playoffState.champion = null;
+        }
+      }
+
+      updateBracketUI();
+    }
+
+    function renderConferenceRounds(conf) {
+      const list = conf === 'east' ? currentEastState : currentWestState;
+      const prefix = conf === 'east' ? 'e' : 'w';
+      const pi = playoffState.playin[conf];
+
+      const t1 = getTeamWithSeed(list[0], 1);
+      const t2 = getTeamWithSeed(list[1], 2);
+      const t3 = getTeamWithSeed(list[2], 3);
+      const t4 = getTeamWithSeed(list[3], 4);
+      const t5 = getTeamWithSeed(list[4], 5);
+      const t6 = getTeamWithSeed(list[5], 6);
+      const t7 = pi.g1Winner;
+      const t8 = pi.g3Winner;
+
+      renderMatchupSlot(`${prefix}-r1-m1-slot`, t1, t8, playoffState.r1[conf][0], conf, 'r1', 0);
+      renderMatchupSlot(`${prefix}-r1-m2-slot`, t4, t5, playoffState.r1[conf][1], conf, 'r1', 1);
+      renderMatchupSlot(`${prefix}-r1-m3-slot`, t3, t6, playoffState.r1[conf][2], conf, 'r1', 2);
+      renderMatchupSlot(`${prefix}-r1-m4-slot`, t2, t7, playoffState.r1[conf][3], conf, 'r1', 3);
+
+      const semi1A = playoffState.r1[conf][0];
+      const semi1B = playoffState.r1[conf][1];
+      renderMatchupSlot(`${prefix}-r2-m1-slot`, semi1A, semi1B, playoffState.r2[conf][0], conf, 'r2', 0);
+
+      const semi2A = playoffState.r1[conf][2];
+      const semi2B = playoffState.r1[conf][3];
+      renderMatchupSlot(`${prefix}-r2-m2-slot`, semi2A, semi2B, playoffState.r2[conf][1], conf, 'r2', 1);
+
+      const cfA = playoffState.r2[conf][0];
+      const cfB = playoffState.r2[conf][1];
+      renderMatchupSlot(`${prefix}-cf-slot`, cfA, cfB, playoffState.cf[conf], conf, 'cf', 0);
+    }
+
+    function renderMatchupSlot(containerId, teamA, teamB, currentWinner, conf, round, index) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (!teamA || !teamB) {
+        const renderDisabledTeam = (t, label) => {
+          if (!t) return `<div class="p-1.5 rounded-xl bg-slate-900/40 border border-slate-800/80 text-[10px] text-slate-500 font-medium text-center">${label}</div>`;
+          return `
+            <div class="w-full p-1.5 rounded-xl border border-slate-800/80 bg-slate-900/40 text-slate-400 opacity-60 flex items-center justify-between text-xs cursor-not-allowed">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-[10px] font-bold text-slate-500 shrink-0">#${t.seed}</span>
+                <img src="${t.logo}" class="w-4 h-4 object-contain shrink-0" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${t.id}';">
+                <span class="font-bold whitespace-nowrap text-[11px] text-slate-400 shrink-0">${t.shortName}</span>
+              </div>
+            </div>
+          `;
+        };
+
+        container.innerHTML = `
+          ${renderDisabledTeam(teamA, 'TBD')}
+          ${renderDisabledTeam(teamB, 'TBD')}
+        `;
+        return;
+      }
+
+      const [topTeam, botTeam] = teamA.seed <= teamB.seed ? [teamA, teamB] : [teamB, teamA];
+
+      container.innerHTML = `
+        ${renderBracketButton(topTeam, currentWinner?.id === topTeam.id, `pickRoundWinner('${conf}', '${round}', ${index}, '${topTeam.id}')`)}
+        ${renderBracketButton(botTeam, currentWinner?.id === botTeam.id, `pickRoundWinner('${conf}', '${round}', ${index}, '${botTeam.id}')`)}
+      `;
+    }
+
+    function pickRoundWinner(conf, round, index, winnerId) {
+      const list = conf === 'east' ? currentEastState : currentWestState;
+      const pi = playoffState.playin[conf];
+
+      let candidateA = null;
+      let candidateB = null;
+
+      if (round === 'r1') {
+        if (index === 0) { candidateA = getTeamWithSeed(list[0], 1); candidateB = pi.g3Winner; }
+        else if (index === 1) { candidateA = getTeamWithSeed(list[3], 4); candidateB = getTeamWithSeed(list[4], 5); }
+        else if (index === 2) { candidateA = getTeamWithSeed(list[2], 3); candidateB = getTeamWithSeed(list[5], 6); }
+        else if (index === 3) { candidateA = getTeamWithSeed(list[1], 2); candidateB = pi.g1Winner; }
+      } else if (round === 'r2') {
+        if (index === 0) { candidateA = playoffState.r1[conf][0]; candidateB = playoffState.r1[conf][1]; }
+        else if (index === 1) { candidateA = playoffState.r1[conf][2]; candidateB = playoffState.r1[conf][3]; }
+      } else if (round === 'cf') {
+        candidateA = playoffState.r2[conf][0];
+        candidateB = playoffState.r2[conf][1];
+      }
+
+      if (!candidateA || !candidateB) {
+        showToast('Both teams must be decided before picking a winner!');
+        return;
+      }
+
+      const winner = candidateA?.id === winnerId ? candidateA : (candidateB?.id === winnerId ? candidateB : null);
+      if (!winner) return;
+
+      if (round === 'r1') {
+        if (playoffState.r1[conf][index]?.id !== winner.id) {
+          playoffState.r1[conf][index] = winner;
+          const semiIndex = index < 2 ? 0 : 1;
+          playoffState.r2[conf][semiIndex] = null;
+          playoffState.cf[conf] = null;
+          playoffState.champion = null;
+        }
+      } else if (round === 'r2') {
+        if (playoffState.r2[conf][index]?.id !== winner.id) {
+          playoffState.r2[conf][index] = winner;
+          playoffState.cf[conf] = null;
+          playoffState.champion = null;
+        }
+      } else if (round === 'cf') {
+        if (playoffState.cf[conf]?.id !== winner.id) {
+          playoffState.cf[conf] = winner;
+          playoffState.champion = null;
+        }
+      }
+
+      updateBracketUI();
+    }
+
+    function pickChampion(teamId) {
+      const eastChampion = playoffState.cf.east;
+      const westChampion = playoffState.cf.west;
+
+      if (!eastChampion || !westChampion) {
+        showToast('Both Eastern & Western Conference Champions must be selected first!');
+        return;
+      }
+
+      if (eastChampion && eastChampion.id === teamId) {
+        playoffState.champion = eastChampion;
+      } else if (westChampion && westChampion.id === teamId) {
+        playoffState.champion = westChampion;
+      }
+
+      updateBracketUI();
+
+      if (playoffState.champion && typeof confetti === 'function') {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+      }
+    }
+
+    function resetPlayoffs() {
+      initPlayoffBracketFromStandings();
+      showToast('Playoff bracket reset!');
+    }
+
+    function renderFinals() {
+      const eastChampion = playoffState.cf.east;
+      const westChampion = playoffState.cf.west;
+
+      const eastSlot = document.getElementById('finals-east-slot');
+      const westSlot = document.getElementById('finals-west-slot');
+      const champSlot = document.getElementById('champion-card-slot');
+
+      if (!eastSlot || !westSlot || !champSlot) return;
+
+      const isEastSelected = playoffState.champion?.id && playoffState.champion.id === eastChampion?.id;
+      const isWestSelected = playoffState.champion?.id && playoffState.champion.id === westChampion?.id;
+
+      // Render East Champion Slot
+      if (eastChampion) {
+        eastSlot.innerHTML = renderBracketButton(
+          eastChampion, 
+          isEastSelected, 
+          `pickChampion('${eastChampion.id}')`
+        );
+      } else {
+        eastSlot.innerHTML = `<div class="p-1.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[10px] text-slate-500 font-medium text-center">East Champion (TBD)</div>`;
+      }
+
+      // Render West Champion Slot
+      if (westChampion) {
+        westSlot.innerHTML = renderBracketButton(
+          westChampion, 
+          isWestSelected, 
+          `pickChampion('${westChampion.id}')`
+        );
+      } else {
+        westSlot.innerHTML = `<div class="p-1.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[10px] text-slate-500 font-medium text-center">West Champion (TBD)</div>`;
+      }
+
+      // Render Champion Crown Showcase
+      if (playoffState.champion) {
+        champSlot.innerHTML = `
+          <div class="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest mb-1.5 text-center">2027 CHAMPION</div>
+          <div class="p-2 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 rounded-xl text-slate-950 font-black border border-amber-300 shadow-xl flex items-center justify-center gap-1.5 w-full">
+            <img src="${playoffState.champion.logo}" class="w-4 h-4 object-contain shrink-0" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${playoffState.champion.id}';">
+            <span class="whitespace-nowrap text-xs font-black text-slate-950 shrink-0">${playoffState.champion.shortName}</span>
+            <i class="fa-solid fa-crown text-amber-950 text-xs shrink-0"></i>
+          </div>
+        `;
+      } else {
+        champSlot.innerHTML = `
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 text-center">2027 NBA CHAMPION</div>
+          <div class="p-2 bg-slate-900/40 rounded-xl border border-dashed border-slate-800 text-slate-600 text-[11px] font-semibold text-center">
+            TBD
+          </div>
+        `;
+      }
+    }
+
+    function renderGraphicTeamBox(team, isWinner) {
+      if (!team) return `<div class="p-1 rounded bg-slate-900/40 text-[9px] text-slate-600">TBD</div>`;
+      const bgClass = isWinner ? 'bg-amber-500/30 border-amber-400 text-amber-200 font-black' : 'bg-slate-900/70 border-slate-800 text-slate-300';
+      return `
+        <div class="flex items-center justify-between p-1 rounded border ${bgClass} text-[10px]">
+          <div class="flex items-center gap-1 min-w-0">
+            <span class="text-[8px] font-black ${isWinner ? 'text-amber-400' : 'text-slate-500'}">#${team.seed}</span>
+            <img src="${team.logo}" class="w-3.5 h-3.5 object-contain shrink-0" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${team.id}';">
+            <span class="whitespace-nowrap font-bold text-[10px] shrink-0">${team.shortName}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGraphicMatchupBox(teamA, teamB, winner) {
+      const renderTeam = (t) => {
+        if (!t) return `<div class="flex items-center justify-center p-1 bg-slate-900/40 rounded text-[9px] text-slate-600">TBD</div>`;
+        const isW = winner && winner.id === t.id;
+        const bgClass = isW ? 'bg-amber-500/30 border-amber-400 text-amber-200 font-bold' : 'bg-slate-900/70 border-slate-800/80 text-slate-300';
+        return `
+          <div class="flex items-center justify-between p-1 px-1.5 rounded border ${bgClass} text-[9px]">
+            <div class="flex items-center gap-1 min-w-0">
+              <span class="text-[8px] font-black ${isW ? 'text-amber-400' : 'text-slate-500'}">#${t.seed}</span>
+              <img src="${t.logo}" class="w-3.5 h-3.5 object-contain shrink-0" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${t.id}';">
+              <span class="whitespace-nowrap font-bold text-[9px] shrink-0">${t.shortName}</span>
+            </div>
+          </div>
+        `;
+      };
+
+      const topTeam = (teamA && teamB) ? (teamA.seed <= teamB.seed ? teamA : teamB) : teamA;
+      const botTeam = (teamA && teamB) ? (teamA.seed <= teamB.seed ? teamB : teamA) : teamB;
+
+      return `
+        <div class="bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80 space-y-1">
+          ${renderTeam(topTeam)}
+          ${renderTeam(botTeam)}
+        </div>
+      `;
+    }
+
+    function openSummaryModal() {
+      const eastList = document.getElementById('modal-east-list');
+      const westList = document.getElementById('modal-west-list');
+      
+      if (eastList && westList) {
+        eastList.innerHTML = currentEastState.map((t, i) => `
+          <li class="flex items-center justify-between py-1 border-b border-slate-800/50">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-black text-slate-500 text-[10px] w-4">${i + 1}.</span>
+              <img src="${t.logo}" class="w-4 h-4 object-contain" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${t.id}';">
+              <span class="font-bold text-white text-xs whitespace-nowrap">${t.name}</span>
+            </div>
+          </li>
+        `).join('');
+
+        westList.innerHTML = currentWestState.map((t, i) => `
+          <li class="flex items-center justify-between py-1 border-b border-slate-800/50">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-black text-slate-500 text-[10px] w-4">${i + 1}.</span>
+              <img src="${t.logo}" class="w-4 h-4 object-contain" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${t.id}';">
+              <span class="font-bold text-white text-xs whitespace-nowrap">${t.name}</span>
+            </div>
+          </li>
+        `).join('');
+      }
+
+      const modal = document.getElementById('summary-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function openPlayoffGraphicModal() {
+      if (!playoffState.champion) {
+        showToast('Please complete all playoff predictions first!');
+        return;
+      }
+
+      const champName = document.getElementById('graphic-champion-name');
+      const champBadge = document.getElementById('graphic-champion-badge');
+      
+      if (champName) champName.innerText = playoffState.champion.name;
+      if (champBadge && playoffState.champion) {
+        champBadge.innerHTML = `
+          <img src="${playoffState.champion.logo}" class="w-6 h-6 object-contain shrink-0" alt="" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${playoffState.champion.id}';">
+          <div class="text-left">
+            <div class="text-[9px] font-bold text-amber-300 uppercase">2027 NBA Champion</div>
+            <div class="text-xs font-black text-white">${playoffState.champion.name}</div>
+          </div>
+        `;
+      }
+
+      const summaryGrid = document.getElementById('graphic-bracket-summary');
+      if (summaryGrid) {
+        const eList = currentEastState;
+        const wList = currentWestState;
+        const ePI = playoffState.playin.east;
+        const wPI = playoffState.playin.west;
+
+        const eT1 = getTeamWithSeed(eList[0], 1);
+        const eT2 = getTeamWithSeed(eList[1], 2);
+        const eT3 = getTeamWithSeed(eList[2], 3);
+        const eT4 = getTeamWithSeed(eList[3], 4);
+        const eT5 = getTeamWithSeed(eList[4], 5);
+        const eT6 = getTeamWithSeed(eList[5], 6);
+        const eT7 = ePI.g1Winner;
+        const eT8 = ePI.g3Winner;
+
+        const wT1 = getTeamWithSeed(wList[0], 1);
+        const wT2 = getTeamWithSeed(wList[1], 2);
+        const wT3 = getTeamWithSeed(wList[2], 3);
+        const wT4 = getTeamWithSeed(wList[4], 5);
+        const wT5 = getTeamWithSeed(wList[3], 4);
+        const wT6 = getTeamWithSeed(wList[5], 6);
+        const wT7 = wPI.g1Winner;
+        const wT8 = wPI.g3Winner;
+
+        summaryGrid.innerHTML = `
+          <div class="grid grid-cols-7 gap-2 items-center text-[10px]">
+            <div class="space-y-2">
+              <div class="text-[9px] font-black text-red-400 uppercase text-center mb-1 tracking-wider">East R1</div>
+              ${renderGraphicMatchupBox(eT1, eT8, playoffState.r1.east[0])}
+              ${renderGraphicMatchupBox(eT4, eT5, playoffState.r1.east[1])}
+              ${renderGraphicMatchupBox(eT3, eT6, playoffState.r1.east[2])}
+              ${renderGraphicMatchupBox(eT2, eT7, playoffState.r1.east[3])}
+            </div>
+
+            <div class="space-y-8 flex flex-col justify-around h-full">
+              <div class="text-[9px] font-black text-red-400 uppercase text-center mb-1 tracking-wider">East Semis</div>
+              ${renderGraphicMatchupBox(playoffState.r1.east[0], playoffState.r1.east[1], playoffState.r2.east[0])}
+              ${renderGraphicMatchupBox(playoffState.r1.east[2], playoffState.r1.east[3], playoffState.r2.east[1])}
+            </div>
+
+            <div class="flex flex-col justify-center h-full space-y-1">
+              <div class="text-[9px] font-black text-red-400 uppercase text-center mb-1 tracking-wider">East Finals</div>
+              ${renderGraphicMatchupBox(playoffState.r2.east[0], playoffState.r2.east[1], playoffState.cf.east)}
+            </div>
+
+            <div class="flex flex-col items-center justify-center p-2.5 bg-gradient-to-b from-amber-500/10 via-slate-950 to-amber-500/10 rounded-xl border border-amber-500/30 text-center shadow-lg">
+              <img src="https://a.espncdn.com/i/espn/misc_logos/500/nba.png" class="w-6 h-6 object-contain mb-1" alt="NBA">
+              <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider mb-2">2027 FINALS</span>
+              <div class="w-full space-y-1 mb-2">
+                ${renderGraphicTeamBox(playoffState.cf.east, playoffState.champion?.id === playoffState.cf.east?.id)}
+                <div class="text-[8px] font-black text-slate-500">VS</div>
+                ${renderGraphicTeamBox(playoffState.cf.west, playoffState.champion?.id === playoffState.cf.west?.id)}
+              </div>
+              <div class="w-full pt-1.5 border-t border-slate-800">
+                <div class="text-[8px] font-black text-amber-400 uppercase mb-1">CHAMPION</div>
+                ${playoffState.champion ? `
+                  <div class="p-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 rounded-lg text-slate-950 font-black border border-amber-300 flex items-center justify-center gap-1 shadow-md">
+                    <img src="${playoffState.champion.logo}" class="w-4 h-4 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/ffffff?text=${playoffState.champion.id}';">
+                    <span class="text-[10px] font-black text-slate-950 whitespace-nowrap">${playoffState.champion.shortName}</span>
+                    <i class="fa-solid fa-crown text-amber-950 text-xs"></i>
+                  </div>
+                ` : `<div class="text-[10px] text-slate-500">TBD</div>`}
+              </div>
+            </div>
+
+            <div class="flex flex-col justify-center h-full space-y-1">
+              <div class="text-[9px] font-black text-blue-400 uppercase text-center mb-1 tracking-wider">West Finals</div>
+              ${renderGraphicMatchupBox(playoffState.r2.west[0], playoffState.r2.west[1], playoffState.cf.west)}
+            </div>
+
+            <div class="space-y-8 flex flex-col justify-around h-full">
+              <div class="text-[9px] font-black text-blue-400 uppercase text-center mb-1 tracking-wider">West Semis</div>
+              ${renderGraphicMatchupBox(playoffState.r1.west[0], playoffState.r1.west[1], playoffState.r2.west[0])}
+              ${renderGraphicMatchupBox(playoffState.r1.west[2], playoffState.r1.west[3], playoffState.r2.west[1])}
+            </div>
+
+            <div class="space-y-2">
+              <div class="text-[9px] font-black text-blue-400 uppercase text-center mb-1 tracking-wider">West R1</div>
+              ${renderGraphicMatchupBox(wT1, wT8, playoffState.r1.west[0])}
+              ${renderGraphicMatchupBox(wT5, wT4, playoffState.r1.west[1])}
+              ${renderGraphicMatchupBox(wT3, wT6, playoffState.r1.west[2])}
+              ${renderGraphicMatchupBox(wT2, wT7, playoffState.r1.west[3])}
+            </div>
+          </div>
+        `;
+      }
+
+      document.getElementById('playoff-graphic-modal').classList.remove('hidden');
+
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function copyTextSummary() {
+      let text = "🏀 MY NBA STANDINGS PREDICTIONS 2026-2027 🏀\n\n";
+      text += "EASTERN CONFERENCE:\n";
+      currentEastState.forEach((t, i) => { text += `${i + 1}. ${t.name}\n`; });
+      text += "\nWESTERN CONFERENCE:\n";
+      currentWestState.forEach((t, i) => { text += `${i + 1}. ${t.name}\n`; });
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Text standings copied to clipboard!');
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Text standings copied to clipboard!');
+      } catch (err) {
+        showToast('Could not copy text');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      if (!toast || !toastMsg) return;
+      toastMsg.innerText = msg;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
